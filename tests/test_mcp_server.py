@@ -50,14 +50,23 @@ def test_account_tool_requires_a_session(tmp_path, monkeypatch):
         mcp_server.unread_count()
 
 
-def test_publish_rejects_non_shipping(tmp_path, monkeypatch):
+@pytest.mark.parametrize("shipping_allowed", [True, False])
+def test_publish_forwards_shipping_preference(tmp_path, monkeypatch, shipping_allowed):
+    from wallapop_mcp.http import Response
+
     monkeypatch.setenv("WALLAPOP_ACCESS_TOKEN", "tok")
     mcp_server._init(str(tmp_path), allow_writes=True)
-    with pytest.raises(ValueError, match="shipping"):
-        mcp_server.publish_item(
-            title="t", description="d", price=10.0, category_leaf_id="10311",
-            condition="good", photo_paths=["x.jpg"], shipping_allowed=False,
-        )
+    captured = {}
+    monkeypatch.setattr(
+        mcp_server._c(), "publish",
+        lambda **kwargs: captured.update(kwargs) or Response(200, {"id": "item-1"}, True, False),
+    )
+    result = mcp_server.publish_item(
+        title="t", description="d", price=10.0, category_leaf_id="10311",
+        condition="good", photo_paths=["x.jpg"], shipping_allowed=shipping_allowed,
+    )
+    assert result["ok"] is True
+    assert captured["shipping_allowed"] is shipping_allowed
 
 
 def test_save_search_sends_the_web_filter_shape(tmp_path, monkeypatch):

@@ -718,6 +718,8 @@ def test_publish_builds_multipart_with_me_location_and_cost_cfg(fake, monkeypatc
     assert item["location"]["latitude"] == 43.66
     assert item["location"]["longitude"] == -7.60
     assert item["delivery"]["cost_configuration_id"] == "814429d6-0000-0000-0000-000000000000"
+    assert item["delivery"]["allowed_by_user"] is True
+    assert item["delivery"]["max_weight_kg"] == 1
     assert item["upload_id"]
 
 
@@ -733,7 +735,8 @@ def test_publish_sends_only_first_photo(fake, monkeypatch, tmp_path):
     assert len(calls_raw) == 1
 
 
-def test_publish_uploads_extra_photos(fake, monkeypatch, tmp_path):
+@pytest.mark.parametrize("shipping_allowed", [True, False])
+def test_publish_uploads_extra_photos(fake, monkeypatch, tmp_path, shipping_allowed):
     calls_raw = []
     def track_raw(method, url, raw_body=None, headers=None, retries=3, timeout=60):
         calls_raw.append((method, url))
@@ -749,7 +752,7 @@ def test_publish_uploads_extra_photos(fake, monkeypatch, tmp_path):
         p.write_bytes(b"jpeg")
         photos.append(str(p))
     client = Wallapop(token="tk")
-    resp = client.publish(photos, "T", 5.0)
+    resp = client.publish(photos, "T", 5.0, shipping_allowed=shipping_allowed)
     assert resp.ok
     raw_urls = [u for _, u in calls_raw]
     assert len([u for u in raw_urls if "/picture2" in u]) == 2
@@ -1385,6 +1388,33 @@ def test_publish_uses_the_given_cost_configuration(fake, monkeypatch, tmp_path):
     assert item["delivery"]["cost_configuration_id"] == "cfg-1"
     # nothing had to be inferred: the account's listings were not even read
     assert not any("/users/wz0123456789/items" in c[1] for c in fake.calls)
+
+
+@pytest.mark.parametrize("cost_configuration_id", [None, "unused-shipping-config"])
+def test_publish_in_person_without_existing_listings(fake, monkeypatch, tmp_path, cost_configuration_id):
+    fake.published_items = {"data": []}
+    calls_raw = []
+
+    def fake_raw(method, url, raw_body=None, **kwargs):
+        calls_raw.append(raw_body)
+        return 200, {"id": "local-sale"}
+
+    monkeypatch.setattr(client_mod, "http_request_raw", fake_raw)
+    client = Wallapop(token="tk")
+    monkeypatch.setattr(
+        client, "_cost_configuration_id",
+        lambda: pytest.fail("an in-person listing must not look up shipping configuration"),
+    )
+    photo = tmp_path / "foto.jpg"
+    photo.write_bytes(b"jpeg")
+    result = client.publish(
+        [str(photo)], "T", 300, shipping_allowed=False,
+        max_weight_kg=5, cost_configuration_id=cost_configuration_id,
+    )
+    assert result.ok and result.data["id"] == "local-sale"
+    assert len(calls_raw) == 1
+    assert published_item_json(calls_raw[0])["delivery"] == {"allowed_by_user": False}
+    assert not any("/users/wz0123456789/items" in call[1] for call in fake.calls)
 
 
 # --- edit: the listing is preserved, never rewritten -------------------------

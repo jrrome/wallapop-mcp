@@ -134,7 +134,7 @@ Constructor: `Wallapop(token=None, refresh_token=None, email=None, persist_fn=No
 | `ensure_conversation(item_hash)` / `conversation_thread(conv_id)` / `inbox()` / `unread_count()` | messaging |
 | `send_message(item_hash, message, report?, allow_browser_fallback=False)` | PubNub REST publish; browser fallback only when enabled and the send was not ambiguous |
 | `reply_to_conversation(conv_id, message, report?)` | publish straight to an existing conversation (seller side) |
-| `publish(photo_paths, title, price, category_leaf_id?, condition?, description?, brand?, model?, color?, max_weight_kg?)` → `Response` | publishes a listing through the pure API, replicating the `POST /api/v3/items` multipart (photo + `item` JSON). `Response.data` = `{"id": <item id>, "flags": {}}` |
+| `publish(photo_paths, title, price, category_leaf_id?, condition?, description?, brand?, model?, color?, max_weight_kg?, cost_configuration_id?, shipping_allowed=True)` → `Response` | publishes a listing through the pure API, replicating the `POST /api/v3/items` multipart (photo + `item` JSON). Set `shipping_allowed=False` for in-person sale only; shipping weight and cost configuration are then ignored. `Response.data` = `{"id": <item id>, "flags": {}}` |
 | `favorite(item_id, favorited=True)` → `Response` | favorite/unfavorite an item (`PUT /items/{id}/favorite`, body `{"favorited": <bool>}`, 204) |
 | `favorite_lists(pages=1)` → `list[Item]` | `GET /favorite-lists` (your favorites; cursor `meta.next` → `since`) |
 | `favorite_list_add(list_id, item_id)` / `favorite_list_remove(list_id, item_id)` → `Response` | `POST /favorite-lists/{id}/items` (body `{"items": [{"id", "is_favorited"}]}`) / `DELETE /favorite-lists/{id}/items/{item_id}` |
@@ -152,6 +152,12 @@ Constructor: `Wallapop(token=None, refresh_token=None, email=None, persist_fn=No
 | `login(email, password)` / `try_refresh()` / `refresh_web()` | session |
 
 `report` (optional dict for `send_message`) receives `{"path": "rest"|"browser"|"skipped", "skipped": bool, "browser_s": float}`.
+
+An in-person-only `publish(..., shipping_allowed=False)` sends
+`"delivery": {"allowed_by_user": false}` without weight or cost configuration.
+It does not look up existing listings to infer a shipping configuration, so it
+also works for accounts without a previously published item. The MCP
+`publish_item` tool exposes the same `shipping_allowed` flag.
 
 ## Errors
 

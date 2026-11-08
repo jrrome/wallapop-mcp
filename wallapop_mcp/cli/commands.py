@@ -999,6 +999,9 @@ def cmd_delete(args: argparse.Namespace) -> int:
 def cmd_publish(args: argparse.Namespace) -> int:
     """Publish an item: pure API by default, or the real web wizard with --browser."""
     if args.mode == "browser":
+        if not getattr(args, "shipping_allowed", True):
+            eprint("--no-shipping is supported only in API mode; omit --mode browser")
+            return 1
         # the price keeps its cents: 19.95 is published as 19.95
         return _cmd_publish_browser(args, args.price)
     return _cmd_publish_api(args, args.price)
@@ -1058,6 +1061,7 @@ def _cmd_publish_api(args: argparse.Namespace, price: float) -> int:
         model=args.model,
         color=args.color,
         max_weight_kg=args.max_weight_kg,
+        shipping_allowed=getattr(args, "shipping_allowed", True),
     )
     announce("published via API", resp)
     data = resp.data if isinstance(resp.data, dict) else {}

@@ -464,6 +464,7 @@ wallapop seller-items <user_id> --max 4 --json
 ```
 wallapop publish /path/to/photos --summary 'Nintendo 3DS Blue' --price 310
 wallapop publish ./photos --summary '...' --price 200 --condition good --brand Nintendo --model 3DS --color blue
+wallapop publish ./photos --summary 'Local pickup only' --price 200 --no-shipping
 wallapop publish ./photos --summary '...' --price 331 --mode browser     # Playwright wizard
 ```
 
@@ -485,6 +486,10 @@ wallapop publish ./photos --summary '...' --price 331 --mode browser     # Playw
   (default `good`).
 - `--price`: price in EUR; cents are allowed (e.g. `19.95`).
 - `--max-weight-kg`: shipping weight in kg (default 1, API mode).
+- `--no-shipping`: in-person sale only (API mode). Omits shipping weight and
+  cost configuration, and does not require a previous listing from the account.
+  Shipping remains enabled when this flag is omitted. Combining it with
+  `--mode browser` is rejected before the wizard starts.
 - `--weight-tier`: the wizard's shipping weight tier (default `0` = 0–1 kg,
   browser mode only).
 - `--headless`: browser mode only, run without a window.

@@ -56,6 +56,10 @@ Anchor your first offer below target and move up in small steps; `get_offer_stat
 
 1. **Publish** — `wallapop publish <photos_dir> --summary "<title ≤50>" --price 42 --condition as_good_as_new [--brand Nulea --model M512]`.
    Library/MCP let you set the category: `client.publish(photo_paths=[…], title=…, price=42, category_leaf_id="10311", condition="as_good_as_new", description=…)` / `publish_item`. **Use the right `category_leaf_id`** (mice `10311`, keyboards `10312`; find it from a comparable item's `taxonomy[-1].id`). `color` is optional — only pass it where the category has a color attribute.
+   For an **in-person-only sale**, pass `shipping_allowed=False` to the library or
+   MCP `publish_item`, or use CLI `--no-shipping` (API mode only). Shipping stays
+   enabled by default. In-person listings do not need a shipping weight or cost
+   configuration, including when the account has no existing listings.
 2. **Edit** — `wallapop edit <item> --price 169 --title "…"` (`edit_item`). Lowering the price notifies users who favourited the item. Success is silent.
 3. **Reply to a buyer** (seller side) — reply **by conversation id**; messaging by `item_id` 403s on your own item: `wallapop message --conversation <id> --text "…"` (MCP `send_message` with `conversation_id`).
 4. **Handle offers** — `wallapop offer status`, then `wallapop offer accept <offer_id>` / `decline` / `counter --price 34`. Accept commits the sale (buyer then pays).

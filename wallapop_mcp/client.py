@@ -1084,6 +1084,7 @@ class Wallapop:
         color: str = "",
         max_weight_kg: int = 1,
         cost_configuration_id: Optional[str] = None,
+        shipping_allowed: bool = True,
     ) -> Response:
         """Publish an item through the pure API (no browser).
 
@@ -1111,6 +1112,11 @@ class Wallapop:
         published items' ``shipping``).  It is *account specific*: when it
         cannot be inferred the publish is refused with a clear error instead
         of guessing a value (pass ``cost_configuration_id=`` to provide it).
+
+        Set ``shipping_allowed=False`` for an in-person-only listing. Its
+        delivery payload contains only ``allowed_by_user: false``; shipping
+        weight and cost configuration are ignored, and no existing listings
+        are consulted to infer a shipping configuration.
 
         On success the response body is ``{"id":"<item id>","flags":{}}``
         (``Response.data`` carries the parsed JSON).  Any ``2xx`` status is
@@ -1146,8 +1152,8 @@ class Wallapop:
         if latitude is None or longitude is None:
             return Response(me.status, {"error_message": "no location in /users/me; publish requires geolocation"}, False, False)
 
-        cost_cfg = cost_configuration_id or self._cost_configuration_id()
-        if not cost_cfg:
+        cost_cfg = (cost_configuration_id or self._cost_configuration_id()) if shipping_allowed else None
+        if shipping_allowed and not cost_cfg:
             return Response(
                 0,
                 {
@@ -1179,6 +1185,9 @@ class Wallapop:
         # that require a color, pass a non-empty value.
         if color:
             attributes["color"] = color
+        delivery: dict[str, Any] = {"allowed_by_user": shipping_allowed}
+        if shipping_allowed:
+            delivery.update(max_weight_kg=max_weight_kg, cost_configuration_id=cost_cfg)
         item = {
             "attributes": attributes,
             "category_leaf_id": category_leaf_id,
@@ -1188,11 +1197,7 @@ class Wallapop:
                 "longitude": longitude,
                 "approximated": approximated,
             },
-            "delivery": {
-                "allowed_by_user": True,
-                "max_weight_kg": max_weight_kg,
-                "cost_configuration_id": cost_cfg,
-            },
+            "delivery": delivery,
             "upload_id": upload_id,
         }
 

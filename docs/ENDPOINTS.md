@@ -724,6 +724,9 @@ Only two fields: **`image`** (the photo, generic filename) and **`item`** (JSON)
 - `upload_id` = client-generated UUID (the same `mode.upload.id`).
 - `color` must be omitted on color-less categories (see
   `docs/multi-photo-upload.md`).
+- In-person-only publishing uses `"delivery": {"allowed_by_user": false}`,
+  omitting `max_weight_kg` and `cost_configuration_id`. The library and MCP expose
+  this as `shipping_allowed=False`; CLI API mode exposes `--no-shipping`.
 - 200 response: `{"id":"<item id>","flags":{}}` — **the listing id comes back
   in the POST response**.
 

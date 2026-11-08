@@ -377,10 +377,11 @@ def publish_item(
     max_weight_kg: int = 1,
     cost_configuration_id: Optional[str] = None,
 ) -> dict:
-    """Publish a listing. A partial result retains the created item ID when a later photo fails; do not recreate it."""
+    """Publish a listing. Set shipping_allowed=False for in-person sale only, without shipping configuration.
+
+    A partial result retains the created item ID when a later photo fails; do not recreate it.
+    """
     _require_session()
-    if not shipping_allowed:
-        raise ValueError("non-shipping publish is not supported by the Python backend yet")
     with _lock:
         return _resp(
             _c().publish(
@@ -395,6 +396,7 @@ def publish_item(
                 color=color or "",
                 max_weight_kg=max_weight_kg,
                 cost_configuration_id=cost_configuration_id,
+                shipping_allowed=shipping_allowed,
             )
         )
 

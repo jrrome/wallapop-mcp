@@ -246,6 +246,10 @@ def build_parser() -> argparse.ArgumentParser:
     pub.add_argument("--model", default="", help="item model, e.g. 3DS (pure-API mode)")
     pub.add_argument("--color", default="", help="item color, e.g. blue (pure-API mode)")
     pub.add_argument("--max-weight-kg", type=int, default=1, help="shipping weight in kg (pure-API mode, default 1)")
+    pub.add_argument(
+        "--no-shipping", dest="shipping_allowed", action="store_false",
+        help="publish for in-person sale only, without shipping (API mode only)",
+    )
     # browser-only flags (keep compat with the original wizard command)
     pub.add_argument("--weight-tier", default="0", help="shipping weight tier radio name (browser mode only, default 0 = 0-1 kg)")
     pub.add_argument("--max-photos", type=int, default=1, help="browser mode only: photos to upload (default 1, max 10)")
